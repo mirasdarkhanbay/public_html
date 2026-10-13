@@ -1,0 +1,747 @@
+<title>Алатау Фуд: HR-миссия</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;700;800&display=swap">
+<style>
+:root{
+  /* Layout: one phone-width column, a lift directory board; each floor opens as its own screen. Deliberately single dark "night over Alatau" look. */
+  --night:#0f1830;--panel:#17223f;--panel2:#1f2d52;--line:#2e3f6c;
+  --snow:#eef2f8;--mist:#9aabc8;
+  --amber:#f3b23a;--apple:#e5483b;--mint:#2fc193;--sky:#6fa8ff;
+  --paper:#f6efe2;--ink:#1b2440;--inkmute:#5b6687;
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"Golos Text","Segoe UI",Arial,sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+*{box-sizing:border-box}
+body{background:var(--night);color:var(--snow);font:15px/1.45 var(--body);padding-inline:16px;-webkit-tap-highlight-color:transparent}
+#app{max-width:440px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding-block:6px 28px;position:relative}
+#hud{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:10px 0 12px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--night);z-index:5}
+#hud .l{justify-self:start;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:13px;color:var(--mist)}
+#hud .c{font-size:11px;color:var(--mist);letter-spacing:.1em;text-transform:uppercase;text-align:center;font-weight:700}
+#hud .r{justify-self:end;display:flex;gap:10px;align-items:center}
+.hearts{color:var(--apple);letter-spacing:3px;font-size:19px;line-height:1}.hearts .off{color:var(--line)}
+.score{font:800 16px var(--display);font-variant-numeric:tabular-nums;position:relative;color:var(--amber)}
+.mute{white-space:nowrap;background:none;border:1px solid var(--line);color:var(--mist);border-radius:8px;padding:4px 8px;font:600 11px var(--body);cursor:pointer}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:34px;line-height:1.05;font-weight:800}
+h1 span{color:var(--amber);font-size:.6em;font-weight:700;display:block;margin-top:8px}
+h2{font-size:25px;font-weight:800;line-height:1.15}
+h3{font-size:17px;font-weight:700;line-height:1.3}
+p{margin:0}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);font-weight:700}
+.sub{color:var(--mist);font-size:14px}
+.lead{color:var(--snow);opacity:.9}
+.scr{display:flex;flex-direction:column;gap:14px;animation:rise .35s ease both}
+@keyframes rise{from{transform:translateY(10px)}to{transform:none}}
+.sky{display:block;width:100%;height:180px;border-radius:16px;border:1px solid var(--line)}
+.sky.small{height:130px}
+.btn{display:block;width:100%;padding:15px 16px;border-radius:12px;border:0;background:var(--amber);color:var(--ink);font:700 14px var(--display);cursor:pointer;letter-spacing:.02em}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--snow)}
+label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);font-weight:700}
+input{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--snow);padding:13px 14px;border-radius:10px;font:500 16px var(--body)}
+.field{display:flex;flex-direction:column;gap:6px}
+.facts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.facts li{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:12px;color:var(--mist);line-height:1.3}
+.facts b{display:block;font:800 22px var(--display);color:var(--snow)}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+
+/* map */
+.safe{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;flex-wrap:wrap}
+.safe>span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);font-weight:700}
+.digits{display:flex;gap:6px}
+.digits b{width:30px;height:40px;display:grid;place-items:center;font:800 18px var(--display);background:var(--night);border:1px solid var(--line);border-radius:7px;color:var(--line)}
+.digits b.on{color:var(--amber);border-color:var(--amber)}
+.digits.big{justify-content:center}
+.digits.big b{width:44px;height:60px;font-size:28px}
+.board{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.board-h,.row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center}
+.board-h{padding:8px 12px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);border-bottom:1px solid var(--line);font-weight:700}
+.row{padding:12px;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left;color:inherit;font:inherit}
+.row:last-child{border-bottom:0}
+.fn{font:800 24px var(--display);color:var(--mist)}
+.rt b{display:block;font-weight:700}
+.rt span{font-size:12px;color:var(--mist)}
+.st{font-size:12px;font-weight:700;padding:5px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap;color:var(--mist)}
+.row.next{background:var(--panel2);cursor:pointer}
+.row.next .fn{color:var(--amber)}
+.row.next .st{background:var(--amber);color:var(--ink);border-color:var(--amber)}
+.row.done .fn,.row.done .st{color:var(--mint)}
+.row.done .st{border-color:rgba(47,193,147,.45)}
+.row.lock{opacity:.5}
+.link{background:none;border:0;color:var(--sky);font:600 13px var(--body);cursor:pointer;text-align:left;padding:4px 0;text-decoration:underline;text-underline-offset:3px}
+.link.center{text-align:center}
+.note{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--snow)}
+
+/* intro + results */
+.introtop{display:flex;gap:14px;align-items:center}
+.bignum{font:800 68px/1 var(--display);color:var(--amber)}
+.gamecard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.story{font-size:15px;border-left:3px solid var(--amber);padding-left:12px}
+.stars{font-size:36px;color:var(--amber);letter-spacing:6px;line-height:1}
+.stars span{color:var(--line)}
+.digitcard{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-radius:14px;background:var(--panel);border:1px solid var(--amber)}
+.digitcard span{color:var(--mist);font-size:13px;font-weight:600}
+.digitcard b{font:800 52px/1 var(--display);color:var(--amber);animation:flip .7s .15s both}
+@keyframes flip{from{transform:rotateX(90deg)}to{transform:none}}
+
+/* shared game parts */
+.game{display:flex;flex-direction:column;gap:12px}
+.ghead{display:flex;flex-direction:column;gap:4px}
+.bar{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:var(--mint)}
+.bar i.low{background:var(--apple)}
+.opts{display:grid;gap:8px}
+.opts.g2{grid-template-columns:1fr 1fr}
+.opt{display:flex;gap:10px;align-items:center;text-align:left;padding:12px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--snow);font:600 14px/1.3 var(--body);cursor:pointer;min-height:54px;min-width:0}
+.opt span{min-width:0}
+.opt:hover:not(:disabled){border-color:var(--sky)}
+.opt kbd{flex:none;width:22px;height:22px;display:grid;place-items:center;border-radius:6px;background:var(--panel2);color:var(--mist);font:700 11px var(--body)}
+.opt.ok{background:rgba(47,193,147,.18);border-color:var(--mint)}
+.opt.no{background:rgba(229,72,59,.2);border-color:var(--apple);animation:shake .35s}
+.opt:disabled{cursor:default}
+.opt.big{justify-content:center;font-size:16px;min-height:62px}
+.ask{font-weight:700}
+.combo{color:var(--amber);font:700 12px var(--display);text-align:center;min-height:1.3em}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* catcher */
+.cv-wrap canvas{width:100%;height:auto;display:block;border-radius:14px;touch-action:none;border:1px solid var(--line)}
+.pad{display:flex;gap:10px}
+.padb{flex:1;padding:13px;font-size:20px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--snow);touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer}
+.padb:active{background:var(--panel2)}
+.hint{font-size:12px;color:var(--mist);text-align:center}
+
+/* matching */
+.match{position:relative;display:grid;grid-template-columns:1fr 1fr;column-gap:36px}
+.match svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.match line{stroke:var(--mint);stroke-width:2.5;stroke-linecap:round}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.mb{min-height:62px;padding:10px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--snow);font:600 13.5px/1.25 var(--body);cursor:pointer;text-align:center;position:relative;z-index:1}
+.col.models .mb{font:700 11.5px/1.25 var(--display);letter-spacing:.02em}
+.mb.sel{border-color:var(--amber);background:#3a3524}
+.mb.done{border-color:var(--mint);background:#15383a;color:var(--mint);cursor:default}
+.mb.no{border-color:var(--apple);animation:shake .35s}
+
+/* person card */
+.person{position:relative;background:var(--paper);color:var(--ink);border-radius:14px;padding:16px;display:grid;grid-template-columns:48px minmax(0,1fr);gap:4px 12px;align-items:center;overflow:hidden}
+.ava{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:800 19px var(--display);color:#fff;background:hsl(var(--h) 50% 40%)}
+.pmeta b{display:block;font-weight:700;font-size:16px}
+.pmeta span{font-size:12px;color:var(--inkmute)}
+.quote{grid-column:1/-1;margin-top:8px;font-size:15px;line-height:1.45}
+.stamp{position:absolute;right:12px;top:14px;font:800 12px var(--display);letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border:2px solid;border-radius:6px;transform:rotate(-8deg);opacity:0}
+.stamp.ok{color:#178a64;opacity:1}
+.stamp.no{color:#c4362b;opacity:1}
+
+/* detective file */
+.file{background:var(--paper);color:var(--ink);border-radius:4px 14px 14px 14px;padding:16px}
+.file-tag{font:700 10px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#7a6a4a;margin-bottom:6px}
+.case{font-size:15px;font-weight:600;line-height:1.45}
+.ev{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.ev li{display:grid;grid-template-columns:86px 62px minmax(0,1fr);gap:8px;align-items:baseline;font-size:13px;border-top:1px dashed #cdbf9f;padding-top:6px}
+.evn{font-weight:700}
+.evv{font-weight:800;font-size:10.5px;text-transform:uppercase;padding:2px 6px;border-radius:4px;text-align:center}
+.evv.hi{background:#d6efe4;color:#14704f}
+.evv.lo{background:#f6dcd7;color:#a3312a}
+.evd{color:#4b5578}
+
+/* communication */
+.chain{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.slot{padding:8px 11px;border-radius:10px;border:1px dashed var(--line);color:var(--mist);font:700 12px var(--body);min-width:38px;text-align:center}
+.slot.f{border-style:solid;border-color:var(--mint);color:var(--snow);background:rgba(47,193,147,.12)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:11px 15px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--snow);font:600 14px var(--body);cursor:pointer}
+.chip:hover{border-color:var(--sky)}
+.chip.no{border-color:var(--apple);animation:shake .35s}
+.track{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:16px 12px;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+.node{font:700 10px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--mist)}
+.wire{position:relative;height:4px;background:repeating-linear-gradient(90deg,var(--line) 0 8px,transparent 8px 14px)}
+.pkt{position:absolute;top:50%;left:0;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 5px rgba(243,178,58,.22);animation:go linear forwards}
+@keyframes go{to{left:62%}}
+.wall{position:absolute;left:67%;top:50%;width:10px;height:36px;margin-top:-18px;background:var(--apple);border-radius:3px;transition:transform .4s,opacity .4s}
+.wall.broken{transform:scaleY(0);opacity:0}
+
+/* boss */
+.boss{display:grid;grid-template-columns:116px minmax(0,1fr);gap:14px;align-items:center}
+.bossart svg{width:116px;height:auto;display:block}
+.bossart.hit{animation:hit .45s}
+@keyframes hit{20%{transform:translateX(-8px) rotate(-4deg);filter:brightness(1.9)}60%{transform:translateX(6px)}}
+.bolt{opacity:.2}
+.bossart.atk .bolt{animation:bolt .6s}
+@keyframes bolt{30%{opacity:1;transform:translateY(5px)}}
+.hp{height:12px;background:var(--panel2);border-radius:6px;overflow:hidden;margin-top:8px;border:1px solid var(--line)}
+.hp i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--apple),var(--amber));transition:width .45s}
+.hpn{font-size:12px;color:var(--mist);margin-top:4px;font-variant-numeric:tabular-nums}
+.stmt{background:var(--paper);color:var(--ink);border-radius:14px;padding:18px;font-size:16px;font-weight:600;line-height:1.45;min-height:112px}
+.tf{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fix{color:var(--amber);font-size:14px;min-height:1.4em}
+
+/* lift */
+.liftdoor{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:14px;background:linear-gradient(90deg,var(--panel) 49.7%,var(--line) 49.7% 50.3%,var(--panel) 50.3%);border:1px solid var(--line)}
+.lnum{font:800 42px/1 var(--display);color:var(--amber)}
+.lorder{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.lorder li{font-weight:700;color:var(--mint);background:rgba(47,193,147,.1);border:1px solid rgba(47,193,147,.35);border-radius:10px;padding:8px 12px}
+.lorder li b{font-family:var(--display);margin-right:8px}
+
+/* finale */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0}
+.stats div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px}
+.stats dt{font-size:10.5px;color:var(--mist);text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+.stats dd{margin:2px 0 0;font:800 20px var(--display);font-variant-numeric:tabular-nums}
+.vault{background:var(--panel);border:1px solid var(--amber);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.vault>span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist);font-weight:700}
+.review{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.review summary{cursor:pointer;font-weight:700}
+.review ol{padding-left:18px;margin:10px 0 0;display:grid;gap:12px}
+.review p{margin:2px 0}
+.rf{font-size:10.5px;color:var(--amber);font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+.ra{color:var(--mint);font-size:13px}
+
+/* feedback */
+#app.hurt::after{content:"";position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 0 4px var(--apple),inset 0 0 90px rgba(229,72,59,.4);animation:fade .5s forwards;z-index:20}
+@keyframes fade{to{opacity:0}}
+.float{position:absolute;right:0;top:-6px;font:800 13px var(--display);animation:up .9s forwards;pointer-events:none;white-space:nowrap}
+.float.g{color:var(--mint)}.float.b{color:var(--apple)}
+@keyframes up{to{transform:translateY(-22px);opacity:0}}
+@media (prefers-reduced-motion:reduce){*:not(.pkt){animation-duration:.01ms!important;transition:none!important}}
+@media (max-width:360px){h1{font-size:28px}.opts.g2{grid-template-columns:1fr}.digits.big b{width:38px;height:52px;font-size:24px}}
+</style>
+
+<div id="app">
+  <header id="hud"><span class="l" id="hl"></span><span class="c" id="hc"></span><span class="r"><span class="score" id="hs">0</span><button class="mute" id="mute" aria-label="Дыбысты қосу немесе өшіру">Дыбыс ✓</button></span></header>
+  <main id="stage"></main>
+</div>
+
+<script>
+/* ====== Баптау: сейф коды (әр қабат бір сан береді). Қаласаңыз, сандарды өзгертіңіз. ====== */
+const CODE=[2,7,1,9,4,6];
+
+/* ====== Лекция мазмұны ====== */
+const FLOORS=[
+ {n:'Өндіріс цехы',t:'Ұйым және ҰМҚ негіздері',g:'Конвейер',
+  story:'Цехта шатасу: жаңа қызметкерлер «ұйым» деген не, ҰМҚ нені зерттейтінін білмейді. Конвейерден дұрыс ұғымдарды іріктеп ал.',
+  rule:'Науаны жылжытып, тек тапсырмаға сай қораптарды ұста. Әр толқында 4 дұрыс қорап жина. Қате қорап — минус бір жүрек.'},
+ {n:'Басқарма',t:'ҰМҚ модельдері',g:'Модель жұптары',
+  story:'Басқарма мүшелері төрт түрлі стильмен басқарып, ұжымды шатастырды. Әр модельдің сипатын орнына қой.',
+  rule:'Сол жақтағы модельді оң жақтағы сипатымен жұпта. 4 раунд, әрқайсысына 45 секунд. Қате жұп — минус бір жүрек.'},
+ {n:'Ашық кеңсе',t:'Тұлға және мінез-құлық',g:'Кім бұл?',
+  story:'Ашық кеңседе ұжым шиеленісіп тұр. Әр қызметкердің мінезін түсінбей, оны басқару мүмкін емес.',
+  rule:'Қызметкердің ҰМҚ моделін, темпераментін және қарым-қатынас стилін анықта. Әр карточкаға 14 секунд. Қатарынан дұрыс жауап комбо бонус береді.'},
+ {n:'HR кабинеті',t:'Қабылдау және атрибуция',g:'Детектив',
+  story:'HR-ға шағым түсті: менеджерлер қызметкерлерді әділетсіз бағалайды. Тергеу жүргіз.',
+  rule:'Алдымен Келли критерийлері бойынша себепті тап: ішкі ме, сыртқы ма? Сосын менеджердің қабылдау қатесін әшкерле.'},
+ {n:'Байланыс орталығы',t:'Коммуникация',g:'Сигнал',
+  story:'Бөлімдер арасындағы хабарлар жолда жоғалып жатыр. Байланысты қалпына келтір.',
+  rule:'Алдымен коммуникация үрдісін ретімен құрастыр. Сосын хабар қабылдаушыға жетпей тұрып, жолындағы кедергінің түрін анықта.'},
+ {n:'Директор кабинеті',t:'Мәдениет, DEI, мотивация',g:'Босс: Дағдарыс',
+  story:'Соңғы кедергі — Дағдарыс. Компания мәдениетін, инклюзиясын және мотивациясын қорғап, оны жең.',
+  rule:'Әр тұжырымға «Дұрыс» не «Жалған» деп жауап бер (← → пернелері де жұмыс істейді). Қатарынан дұрыс жауап соққыны күшейтеді. 10 секунд ішінде үлгер.'}
+];
+
+const CATCH=[
+ {t:'Ұйым сипаттамалары',col:'#f3b23a',
+  rule:'Ұйым сипаттамалары: миссия мен мақсат, ұйымдық мәдениет, ұйымдық құрылым, сыртқы ортамен тұрақты өзара іс-қимыл, ресурстарды пайдалану.',
+  ok:['Миссия мен мақсат','Ұйымдық мәдениет','Ұйымдық құрылым','Сыртқы ортамен тұрақты байланыс','Ресурстарды пайдалану'],
+  bad:['Мақсаттың болмауы','Бір адамның жеке ісі','Құрылымның болмауы','Сыртқы ортадан оқшаулану','Тек жылдық есеп']},
+ {t:'ҰМҚ пәнінің ерекшеліктері',col:'#6fa8ff',
+  rule:'ҰМҚ пәні: мультипәндік, ұйымдағы тұлғаға бағытталған, нәтижелілікке фокусталған, сыртқы орта әсерін ескереді.',
+  ok:['Мультипәндік','Ұйымдағы тұлғаға бағытталған','Нәтижелілікке фокусталған','Сыртқы орта әсерін ескереді'],
+  bad:['Тек бір ғылымға сүйенеді','Тек техникаға бағытталған','Нәтижеге мән бермейді','Сыртқы ортаны елемейді']},
+ {t:'Қарым-қатынас бойынша ұйым түрлері',col:'#2fc193',
+  rule:'Ұйым ішіндегі қарым-қатынас бойынша: корпоративті, жеке, адхократиялық, партисипативті. Мемлекеттік, муниципалды — меншік нысаны; коммерциялық — пайдаға қатысты; ресми, бейресми — құрылу тәсілі.',
+  ok:['Корпоративті','Адхократиялық','Партисипативті'],
+  bad:['Муниципалды','Коммерциялық','Бейресми','Мемлекеттік','Ресми']}
+];
+
+const MODELS=['Авторитарлық','Қорғаншылық','Қолдаушы','Алқалық'];
+const MATTR=[
+ {t:'Модельдің негізі',v:['Билік','Экономикалық ресурстар','Басшылық','Әріптестік']},
+ {t:'Менеджментке бейімділік',v:['Өкілеттілік','Ақша','Қолдау','Командада жұмыс']},
+ {t:'Жұмыскерлердің бейімділігі',v:['Бағыну','Қауіпсіздік пен жеңілдіктер','Жұмыс міндеттерін атқару','Жауапкершілікті мінез-құлық']},
+ {t:'Жұмыскерге психологиялық нәтижесі',v:['Тікелей басшыға тәуелділік','Ұйымға тәуелділік','Басқаруда қатысу','Өзіндік тәртіп']},
+ {t:'Қанағаттандырылатын қажеттілік',v:['Өмір сүру қажеттіліктері','Қауіпсіздік қажеттіліктері','Мәртебе және тану','Өзін-өзі жетілдіру']},
+ {t:'Еңбек үрдісіне қатысу',v:['Минималды','Пассивті әріптестік','Оянған ынталандыру','Орташа ынта']}
+];
+
+const SORT=[
+ {t:'Қызметкердің ҰМҚ моделі',q:'Бұл қызметкер қай модельге жатады?',o:['Адал және тәртіпті','Бейімделген','Оригинал','Бүлікші'],c:[
+  ['Асель','сапа бөлімі','«Компанияның құндылықтары — менің де құндылықтарым. Ережені бұзбаймын, тапсырманы адал орындаймын.»',0],
+  ['Гүлмира','бас бухгалтер','12 жыл бойы компанияда. Ұжымның нормаларын толық қолдайды, ешқашан компания мүддесіне қарсы әрекет етпейді.',0],
+  ['Бауыржан','логистика','Компания миссиясына онша сенбейді, бірақ барлық нұсқаулық пен кестені мүлтіксіз сақтайды. Жақсы ұсыныс түссе, ертең-ақ кетуі мүмкін.',1],
+  ['Ерасыл','курьер','«Маған мұндағы құндылықтар бәрібір, бірақ ережені бұзбаймын — жалақы уақытында түссе болды.»',1],
+  ['Дана','мәзір әзірлеуші','Компанияның мақсатына шын сенеді, бірақ дресс-код пен қатаң кестені «ескі дәстүр» дейді. Ұжымда «ақ қарға», жаңа идеялары көп.',2],
+  ['Камила','дизайнер','Бренд мақсатын жақсы көреді, бірақ стандарт шаблонмен жұмыс істегісі келмейді. Еркіндік берсе, компанияға үлкен пайда әкеледі.',2],
+  ['Тимур','маркетинг','Ұйымның құндылықтарын да, нормаларын да қабылдамайды, жиналыста үнемі дау шығарады. Бірақ ең батыл науқандар соның басынан шыққан.',3],
+  ['Санжар','сауда өкілі','Кез келген жаңа ережеге қарсы шығып, қақтығыс тудырады, компания құндылықтарын мойындамайды. Өте дарынды, бірақ басқаруы қиын.',3]]},
+ {t:'Темперамент',q:'Бұл қызметкердің темпераменті қандай?',o:['Сангвиник','Флегматик','Холерик','Меланхолик'],c:[
+  ['Әлия','HR маманы','Жаңа филиалға ауысқан күні-ақ бәрімен танысып, тез бейімделіп кетті. Белсенді, ашық.',0],
+  ['Нұрбек','бармен','Тапсырма өзгерсе, бірден жаңа жоспарға көшеді, клиенттермен оңай тіл табысады.',0],
+  ['Ержан','технолог','Цехта төтенше жағдай болса да сабырлы, байсалды. Эмоциясын сыртқа сирек шығарады.',1],
+  ['Сәуле','қойма меңгерушісі','Ауыр түгендеуді асықпай, бір қалыпты жүргізеді. Оны ашуландыру өте қиын.',1],
+  ['Мейір','ауысым жетекшісі','Энергиясы мол, бірақ ұстамсыз: кішкене қатеге бола тез тұтанып, дауысын көтереді.',2],
+  ['Алмас','сатып алу бөлімі','Келіссөзде бірден қызып кетеді, шұғыл шешім қабылдайды, кейін тез басылады.',2],
+  ['Інжу','аналитик','Сезімтал, әсершіл. Сынды ауыр қабылдайды, жалғыз жұмыс істегенді жөн көреді.',3],
+  ['Томирис','кондитер','Әріптесінің бір салқын сөзінен кейін күні бойы ойланып, тұйықталып қалды.',3]]},
+ {t:'Қарым-қатынас стилі',q:'Бұл қандай мінез-құлық стилі?',o:['Агрессивті','Пассивті','Пассивті-агрессивті','Ассертивті'],c:[
+  ['Ринат','ауысым бастығы','«Мен айттым — бітті. Сенің пікірің ешкімге керек емес.»',0],
+  ['Арман','сатушы','Әріптесінің сөзін бөліп, оның идеясын бүкіл жиналыстың алдында мазақ етті.',0],
+  ['Жанар','жас аспаз','Рецептте қате барын біледі, бірақ «қалай десеңіз, солай» деп үндемей қалады.',1],
+  ['Асқар','курьер','Демалыс күні жұмысқа шақырғанда қарсы болса да, «жоқ» деуге батылы бармайды.',1],
+  ['Ләззат','жоба менеджері','Жоспармен келіскендей болады, бірақ тапсырманы әдейі созып, «ұмытып» кетеді.',2],
+  ['Бекарыс','бухгалтер','«Жақсы, жасаймын» деді де, артынан басшыны сынап, есепті соңғы сағатта ғана тапсырды.',2],
+  ['Айжан','бренд-шеф','«Бұл мәзірмен келіспеймін, себебі өзіндік құны жоғары. Сіздің дәлеліңізді де тыңдағым келеді.»',3],
+  ['Дәурен','HR жетекшісі','«Кешкі жиналыс маған ыңғайсыз. 10:00-ге ауыстырайық па? Бәріне ыңғайлы ма екен?»',3]]}
+];
+
+const KELLY_RULE='Келли ережесі: келісім жоғары, ерекшелік жоғары, тұрақтылық төмен болса — себеп сыртқы жағдайда (ситуациялық). Керісінше болса — себеп адамның өзінде (диспозициялық).';
+const KELLY=[
+ {s:'Есепші Нұрлан бүгін апталық есепті кешіктірді.',a:1,e:[['Келісім','жоғары','Бөлімдегі барлық адам кешіктірді'],['Ерекшелік','жоғары','Нұрлан бұрын ешқашан кешіктірмеген'],['Тұрақтылық','төмен','Бұл бір-ақ рет болды']]},
+ {s:'Қоймашы Бекзат қаптамаға қате жапсырма жапсырды.',a:1,e:[['Келісім','жоғары','Жаңа құрылғымен істеген бес адамның бәрі осы қатені жіберді'],['Ерекшелік','жоғары','Басқа тапсырмаларда қателеспейді'],['Тұрақтылық','төмен','Құрылғы ауысқалы бері бір рет']]},
+ {s:'Сатушы Ғалым бүгін күндізгі жоспарды орындамады.',a:1,e:[['Келісім','жоғары','Бүкіл сауда залы орындамады — жарық өшіп қалған'],['Ерекшелік','жоғары','Ғалым әдетте жоспарды асыра орындайды'],['Тұрақтылық','төмен','Бұрын мұндай болмаған']]},
+ {s:'Айгүл тағы да таңғы жиналысқа кешікті.',a:0,e:[['Келісім','төмен','Басқалардың бәрі уақытында келді'],['Ерекшелік','төмен','Ол басқа іс-шараларға да кешігеді'],['Тұрақтылық','жоғары','Ай сайын қайталанады']]},
+ {s:'Кассир Мадина клиентке дөрекі сөйледі.',a:0,e:[['Келісім','төмен','Басқа кассирлер сол клиентпен сыпайы сөйлесті'],['Ерекшелік','төмен','Әріптестерімен де жиі ұрсысады'],['Тұрақтылық','жоғары','Апта сайын қайталанады']]},
+ {s:'Аспаз Әсем бүгінгі сорпаны тұздап жіберді.',a:0,e:[['Келісім','төмен','Басқа аспаздар тұзды дұрыс салды'],['Ерекшелік','төмен','Басқа тағамдарды да жиі тұздап жібереді'],['Тұрақтылық','жоғары','Бірнеше апта қатарынан']]}
+];
+
+const EFF=['Ореол эффектісі','Алғашқы ақпарат эффектісі','Жаңалық эффектісі','Стереотипизация','Сұлулық эффектісі','Проекция','Өзін-өзі қорғау бейімділігі','Негізгі атрибуция қатесі','Жалған келісім'];
+const EFFS=[
+ ['Директор Арманның бір презентациясы керемет өткенін көріп, оны есепте де, логистикада да, HR-да да мықты деп шешті.',0],
+ ['Жаңа аспаз алғашқы күні кешігіп келді. Үш ай бойы мінсіз жұмыс істесе де, басшы оны әлі «тәртіпсіз» деп санайды.',1],
+ ['Жыл бойы үздік жұмыс істеген маманды басшы тек соңғы аптадағы бір қатесіне қарап бағалады.',2],
+ ['«Ол бағдарламашы ғой — адамдармен сөйлесе алмайды», — деп HR кандидатты клиенттермен жұмысқа шақырмады.',3],
+ ['Сыртқы келбеті тартымды кандидатты басшы бірден «табысты, сенімді маман» деп таңдады.',4],
+ ['Жұмысты өзі созатын менеджер барлық қызметкерді «жалқау, жұмысты созады» деп ойлайды.',5],
+ ['Менеджер жоспар орындалмаса — «нарық нашар болды», орындалса — «бәрі менің арқамда» дейді.',6],
+ ['Курьер кешікті. Басшы жолдағы кептелісті ескермей, «ол жауапсыз адам» деп бірден шешті.',7],
+ ['Бренд-менеджер «менің дизайнымды бәрі ұнатады, басқаша ойлау мүмкін емес» деп сенеді.',8]
+];
+
+const CHAIN=['Жіберуші','Кодтау','Хабар','Канал','Декодтау','Қабылдаушы','Кері байланыс'];
+const BT=['Жеке кедергі','Физикалық кедергі','Семантикалық кедергі','Вербалды емес кедергі','Когнитивті диссонанс','Полярлық көзқарас'];
+const BARR=[
+ ['Технолог жаңа курьерге «FIFO, SKU, HACCP» деп нұсқау берді, бірақ сөздердің мағынасын ашпады.',2],
+ ['Басшы «кешке дейін тапсыр» деді: біреу 18:00 деп, екіншісі 23:59 деп түсінді.',2],
+ ['Цехтағы тоңазытқыш қондырғысының шуынан ауысым бастығының нұсқауы естілмеді.',1],
+ ['Филиал мен бас кеңсе арасындағы интернет үзіліп, тапсырыс хаты жетпей қалды.',1],
+ ['Директор «бәрі жақсы» деді, бірақ қолын айқастырып, көзін алып қашты. Қызметкерлер оған сенбеді.',3],
+ ['Маркетолог бухгалтерге өкпелі болғандықтан, оның хатын оқымай-ақ «тағы бос сөз» деп шешті.',0],
+ ['Ұялшақ жаңа қызметкер басшыдан қорқып, түсінбеген нәрсесін сұрауға батылы бармады.',0],
+ ['Қызметкер Алатау Фудты «ең үздік компания» деп санайды, бірақ жалақы кешіккенін көріп, ішкі қайшылыққа түсті.',4],
+ ['Жиналыста екі бөлім тек өз пікірін қорғап, бір-бірін мүлде тыңдамады. Ұжым екіге жарылды.',5]
+];
+
+const B_CULT=[
+ ['Ұйымдық мәдениет — ұйымның барлық мүшелері бөлісетін болжамдар, нанымдар, құндылықтар мен нормалар жиынтығы.',1],
+ ['Э. Шейн бойынша ұйымдық мәдениеттің үш деңгейі бар: беткі, ішкі және терең.',1],
+ ['Камерон мен Куин бойынша мәдениет түрлері: кландық, адхократиялық, иерархиялық, нарықтық.',1],
+ ['Ч. Ханди бойынша «Зевс мәдениеті» — міндет мәдениеті.',0,'Зевс — билік мәдениеті. Міндет мәдениеті — Афина.'],
+ ['Ч. Ханди бойынша «Аполлон мәдениеті» — рөлдік мәдениет.',1],
+ ['Ч. Ханди бойынша «Дионис мәдениеті» — тұлға мәдениеті.',1],
+ ['«Нарықтық мәдениет» — Ч. Хандидің типологиясына жатады.',0,'Нарықтық мәдениет — Камерон мен Куин типологиясында. Хандиде: Зевс, Аполлон, Афина, Дионис.'],
+ ['Ұйымдық мәдениет құрамына біріктіру және бөлу нормалары мен ұйым құндылықтары кіреді.',1],
+ ['«Афина мәдениеті» — билік мәдениеті.',0,'Афина — міндет мәдениеті. Билік мәдениеті — Зевс.']
+];
+const B_DEI=[
+ ['DEI — Diversity, Equity, Inclusion: әртүрлілік, теңдік және инклюзия.',1],
+ ['DEI тұжырымдамасының негізі 1960 жылдары АҚШ-та пайда болды.',1],
+ ['1964 жылғы Азаматтық құқықтар туралы заң DEI индустриясының катализаторы саналады.',1],
+ ['Жасы, жынысы, нәсілі — терең деңгейдегі әртүрлілік.',0,'Бұл — беткі деңгейдегі әртүрлілік. Терең деңгей — құндылықтар, сенімдер, жұмыс стилі.'],
+ ['Токенизм — инклюзияны шынайы жасамай, азшылық өкілдерін тек «көзбояушылық» үшін жұмысқа алу.',1],
+ ['Этноцентризм — барлық мәдениеттерді тең деп құрметтеу.',0,'Этноцентризм — өз мәдениетін басқалардан жоғары қою.'],
+ ['«Соқыр» іріктеуде түйіндеме есімі мен жынысы көрсетілмей қаралады.',1],
+ ['ERG — ұқсас мүдделері мен мәселелері бар қызметкерлерді қолдау топтары.',1],
+ ['Санадан тыс стереотиптер (unconscious bias) DEI-ге кедергі болмайды.',0,'Санадан тыс стереотиптер — DEI-дің негізгі кедергілерінің бірі.'],
+ ['Inclusion — әр қызметкер өзін маңызды сезініп, шешім қабылдауға қатыса алатын орта.',1]
+];
+const B_MOT=[
+ ['P = c × M: ұйымның әлеуетті нәтижесі қызметкерлердің қабілеті мен уәждемесінің көбейтіндісі.',1],
+ ['P = c × M формуласында M — компанияның ақша қоры.',0,'M — қызметкерлердің уәждемесі (мотивациясы).'],
+ ['Мотивациялық ынталандыру: жетістікке, топқа жатуға, құзыреттілікке және билікке мотивация.',1],
+ ['Маслоу пирамидасының ең жоғарғы сатысы — физиологиялық қажеттіліктер.',0,'Ең жоғарғысы — өзін-өзі өзектендіру. Физиологиялық қажеттіліктер — пирамиданың негізі.'],
+ ['Мотивация — мінез-құлықты бағыттайтын ішкі қозғаушы күш.',1],
+ ['Мотивация үлгісінде марапаттау қажеттіліктерді қанағаттандыруға әкеледі.',1],
+ ['Қабілеті жоғары, бірақ уәждемесі нөлге тең қызметкердің P = c × M бойынша нәтижесі де жоғары болады.',0,'M = 0 болса, P = c × 0 = 0. Уәждемесіз нәтиже болмайды.']
+];
+
+const LIFT=[
+ {t:'ҰМҚ пәнінің 3 деңгейі',s:'кішіден үлкенге қарай',v:['Жеке','Топтық','Ұйымдастырушылық']},
+ {t:'Маслоу пирамидасы',s:'төменнен жоғарыға қарай',v:['Физиологиялық','Қауіпсіздік','Әлеуметтік байланыс','Сыйластық пен мойындалу','Өзін-өзі өзектендіру']},
+ {t:'Тұлға дамуының фазалары',s:'бірінші фазадан бастап',v:['Бейімделу','Даралану','Интеграция']},
+ {t:'Қабылдау процесі',s:'бірінші қадамнан бастап',v:['Бақылау','Сұрыптау','Ұйымдастыру','Интерпретация']},
+ {t:'Э. Шейн: мәдениет деңгейлері',s:'сырттан ішке қарай',v:['Беткі деңгей','Ішкі деңгей','Терең деңгей']}
+];
+
+const BOSS_SVG='<svg viewBox="0 0 120 100" aria-hidden="true"><path class="bolt" d="M62 70 l-9 14 h8 l-6 13 l17 -19 h-8 l6 -8z" fill="#f3b23a"/><g><circle cx="38" cy="46" r="22" fill="#3b4b7c"/><circle cx="64" cy="34" r="28" fill="#4a5c92"/><circle cx="90" cy="48" r="20" fill="#3b4b7c"/><rect x="20" y="46" width="88" height="24" rx="12" fill="#3b4b7c"/><path d="M44 46 l13 5 M86 46 l-13 5" stroke="#0f1830" stroke-width="4" stroke-linecap="round"/><circle cx="53" cy="56" r="4.5" fill="#e5483b"/><circle cx="76" cy="56" r="4.5" fill="#e5483b"/><path d="M55 67 q9 -6 18 0" stroke="#0f1830" stroke-width="3" fill="none" stroke-linecap="round"/></g></svg>';
+
+/* ====== Көмекшілер ====== */
+const $=s=>document.querySelector(s);
+const stage=$('#stage');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=(a,n)=>shuffle(a).slice(0,n);
+const hue=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))%360;return h};
+const mmss=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+
+let G=null,RUN=null,HUDMODE='menu',cleanups=[],onKey=null;const held={};
+function clearRun(){cleanups.forEach(f=>{try{f()}catch(e){}});cleanups=[];onKey=null;for(const k in held)held[k]=0}
+function loop(fn){let on=true,last=performance.now(),id;const step=t=>{if(!on)return;const dt=Math.min(.05,(t-last)/1000);last=t;fn(dt,t);if(on)id=requestAnimationFrame(step)};id=requestAnimationFrame(step);const stop=()=>{on=false;cancelAnimationFrame(id)};cleanups.push(stop);return stop}
+function after(ms,fn){const id=setTimeout(fn,ms);cleanups.push(()=>clearTimeout(id))}
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(e.target.tagName==='INPUT')return;held[k]=1;if(k.startsWith('arrow')||k===' ')e.preventDefault();if(onKey&&!e.repeat)onKey(k,e)});
+addEventListener('keyup',e=>{held[e.key.toLowerCase()]=0});
+
+const KEY='alatau-hr-missiya-v1';
+function save(){try{localStorage.setItem(KEY,JSON.stringify(G))}catch(e){}}
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY));return v&&v.t0?v:null}catch(e){return null}}
+function wipe(){try{localStorage.removeItem(KEY)}catch(e){}}
+
+/* дыбыс */
+let AC=null,muted=false;
+function sfx(k){if(muted)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const now=AC.currentTime;const seq={ok:[[660,.0],[990,.07]],bad:[[200,0],[140,.09]],win:[[523,0],[659,.1],[784,.2],[1046,.3]],tap:[[520,0]],hit:[[300,0],[600,.05]]}[k]||[[440,0]];
+ seq.forEach(([f,d])=>{const o=AC.createOscillator(),g=AC.createGain();o.type=k==='bad'?'sawtooth':'triangle';o.frequency.value=f;g.gain.setValueAtTime(.0001,now+d);g.gain.exponentialRampToValueAtTime(k==='tap'?.04:.09,now+d+.01);g.gain.exponentialRampToValueAtTime(.0001,now+d+.18);o.connect(g).connect(AC.destination);o.start(now+d);o.stop(now+d+.2)})}catch(e){}}
+$('#mute').onclick=()=>{muted=!muted;$('#mute').textContent='Дыбыс '+(muted?'✕':'✓')};
+
+function hud(){
+ const L=$('#hl'),C=$('#hc');$('#hs').textContent=G?G.score:0;
+ if(HUDMODE==='run'&&RUN){L.innerHTML='<span class="hearts">'+'♥'.repeat(Math.max(0,RUN.hearts))+'<span class="off">'+'♥'.repeat(Math.max(0,3-RUN.hearts))+'</span></span>';C.textContent=(RUN.i+1)+'-қабат'}
+ else{L.textContent=G?G.team:'';C.textContent='Алатау Фуд'}
+}
+function floatPts(s,good){const sc=$('#hs');const f=document.createElement('span');f.className='float '+(good?'g':'b');f.textContent=s;sc.appendChild(f);setTimeout(()=>f.remove(),950)}
+function hurt(){const a=$('#app');a.classList.remove('hurt');void a.offsetWidth;a.classList.add('hurt');setTimeout(()=>a.classList.remove('hurt'),520)}
+
+/* ====== Қабат контексті ====== */
+function ctx(i){return{
+ ok(n){if(!RUN||RUN.dead)return;RUN.pts+=n;G.score+=n;sfx('ok');hud();floatPts('+'+n,true)},
+ pen(n){if(!RUN||RUN.dead)return;const d=Math.min(n,G.score);RUN.pts-=d;G.score-=d;hud();if(d)floatPts('−'+d,false)},
+ bad(q,a){if(!RUN||RUN.dead)return false;RUN.hearts--;G.log.push({f:i,q,a});sfx('bad');hurt();hud();if(RUN.hearts<=0){RUN.dead=true;after(900,()=>floorFail(i));return false}return true},
+ win(){if(!RUN||RUN.dead)return;RUN.dead=true;floorWin(i)}
+}}
+
+/* ====== Аспан мен ғимарат ====== */
+function sky(cv,lit){
+ if(!cv)return;const W=cv.clientWidth||400,H=cv.clientHeight||170,d=Math.min(2,devicePixelRatio||1);cv.width=W*d;cv.height=H*d;const x=cv.getContext('2d');x.scale(d,d);
+ let s=11;const R=()=>(s=(s*16807)%2147483647)/2147483647;
+ const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#26396d');g.addColorStop(.7,'#152040');g.addColorStop(1,'#0f1830');x.fillStyle=g;x.fillRect(0,0,W,H);
+ x.fillStyle='rgba(238,242,248,.75)';for(let i=0;i<50;i++){x.beginPath();x.arc(R()*W,R()*H*.45,R()*1.2+.3,0,7);x.fill()}
+ const mg=x.createRadialGradient(W*.15,H*.22,4,W*.15,H*.22,40);mg.addColorStop(0,'rgba(246,239,226,.35)');mg.addColorStop(1,'rgba(246,239,226,0)');x.fillStyle=mg;x.fillRect(0,0,W,H);
+ x.fillStyle='#f6efe2';x.beginPath();x.arc(W*.15,H*.22,11,0,7);x.fill();
+ const ridge=(pts,col,snow)=>{x.beginPath();x.moveTo(0,H);pts.forEach(([a,b])=>x.lineTo(a*W,b*H));x.lineTo(W,H);x.closePath();x.fillStyle=col;x.fill();
+  if(!snow)return;x.fillStyle=snow;for(let k=1;k<pts.length-1;k++){const p0=pts[k-1],p1=pts[k],p2=pts[k+1];if(p1[1]<p0[1]&&p1[1]<p2[1]){const f=.3,A=[p1[0]+(p0[0]-p1[0])*f,p1[1]+(p0[1]-p1[1])*f],B=[p1[0]+(p2[0]-p1[0])*f,p1[1]+(p2[1]-p1[1])*f];
+   x.beginPath();x.moveTo(p1[0]*W,p1[1]*H);x.lineTo(A[0]*W,A[1]*H);x.lineTo((A[0]+(B[0]-A[0])*.3)*W,(Math.max(A[1],B[1])-.03)*H);x.lineTo((A[0]+(B[0]-A[0])*.55)*W,(Math.max(A[1],B[1]))*H);x.lineTo((A[0]+(B[0]-A[0])*.8)*W,(Math.max(A[1],B[1])-.04)*H);x.lineTo(B[0]*W,B[1]*H);x.closePath();x.fill()}}};
+ ridge([[0,.6],[.08,.46],[.17,.55],[.28,.28],[.38,.46],[.47,.37],[.56,.52],[.66,.24],[.76,.43],[.86,.34],[.95,.5],[1,.45]],'#2b3d70','rgba(238,242,248,.88)');
+ ridge([[0,.8],[.12,.66],[.22,.76],[.34,.6],[.46,.74],[.6,.64],[.72,.78],[.86,.67],[1,.76]],'#1b284d');
+ const bw=Math.min(92,W*.22),bx=W*.66,fh=Math.max(10,(H*.58)/7),gy=H-4,top=gy-6*fh;
+ x.fillStyle='#0b1226';x.fillRect(bx,top-10,bw,gy-top+10);x.fillStyle='#f3b23a';x.fillRect(bx+bw*.15,top-22,bw*.7,12);
+ x.fillStyle='#1b2440';x.font='800 7.5px "Unbounded", Arial, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('АЛАТАУ ФУД',bx+bw/2,top-15.5);
+ for(let f=0;f<6;f++){const y=gy-(f+1)*fh+3;for(let w=0;w<5;w++){const wx=bx+6+w*((bw-12)/5);x.fillStyle=f<lit?'#f3b23a':(f===lit?'#6fa8ff':'#22325c');x.fillRect(wx+1,y,(bw-12)/5-4,fh-6)}}
+ x.fillStyle='#0f1830';x.fillRect(0,gy,W,H-gy);
+}
+
+/* ====== Экрандар ====== */
+function setHud(m){HUDMODE=m;hud()}
+function showStart(){
+ clearRun();RUN=null;setHud('menu');const saved=load();
+ stage.innerHTML=`<section class="scr">
+  <canvas class="sky" id="sky" aria-label="Алатау таулары мен Алатау Фуд ғимараты"></canvas>
+  <p class="eyebrow">Ұйымдық мінез-құлық · команда квесті</p>
+  <h1>Алатау Фуд<span>HR-миссия</span></h1>
+  <p class="lead">Алатау Фуд — Алматыдағы тағам өндіретін компания. Соңғы айда қызметкерлер кетіп, тапсырыстар кешігіп, ұжымда дау көбейді. Сен — жаңа HR-менеджерсің. Ғимараттың алты қабатын аралап, әр бөлімнің мәселесін ҰМҚ білімімен шеш. Әр қабат сейф кодының бір санын береді.</p>
+  <ul class="facts"><li><b>6</b>қабат, 6 түрлі ойын</li><li><b>5</b>лифт-бонус</li><li><b>${CODE.length}</b>санды сейф коды</li></ul>
+  <div class="field"><label for="team">Команда атауы</label><input id="team" maxlength="24" placeholder="мысалы: 3-топ" autocomplete="off"></div>
+  <button class="btn" id="go">Миссияны бастау</button>
+  ${saved?`<button class="btn ghost" id="cont">Жалғастыру: ${esc(saved.team)} · ${saved.next}/6 қабат</button>`:''}
+ </section>`;
+ sky($('#sky'),0);
+ $('#go').onclick=()=>{sfx('tap');const t=$('#team').value.trim()||'Команда';G={team:t,next:0,score:0,digits:[],stars:[],pts:[],log:[],t0:Date.now(),tEnd:null};save();showMap()};
+ $('#team').onkeydown=e=>{if(e.key==='Enter')$('#go').click()};
+ if(saved)$('#cont').onclick=()=>{G=saved;G.next>=6?finale():showMap()};
+}
+function showMap(){
+ clearRun();RUN=null;setHud('menu');
+ const row=i=>{const F=FLOORS[i],done=i<G.next,next=i===G.next;
+  const st=done?'★'.repeat(G.stars[i]||0)+'☆'.repeat(3-(G.stars[i]||0)):next?'Кіру':'Жабық';
+  return `<${next?'button':'div'} class="row ${done?'done':next?'next':'lock'}" ${next?`data-i="${i}"`:''}><span class="fn">${i+1}</span><span class="rt"><b>${F.n}</b><span>${F.t} · ${F.g}</span></span><span class="st">${st}</span></${next?'button':'div'}>`};
+ stage.innerHTML=`<section class="scr">
+  <canvas class="sky small" id="sky" aria-hidden="true"></canvas>
+  <div class="safe"><span>Сейф коды</span><div class="digits">${CODE.map((d,i)=>`<b class="${G.digits[i]!=null?'on':''}">${G.digits[i]!=null?d:'·'}</b>`).join('')}</div></div>
+  <div class="board" role="list"><div class="board-h"><span>Қабат</span><span>Бөлім</span><span>Күйі</span></div>${[5,4,3,2,1,0].map(row).join('')}</div>
+  ${G.next>=6?'<button class="btn" id="fin">Сейфті ашу</button>':''}
+  <button class="link center" id="reset">Басынан бастау</button>
+ </section>`;
+ sky($('#sky'),G.next);
+ stage.querySelectorAll('.row.next').forEach(b=>b.onclick=()=>{sfx('tap');floorIntro(+b.dataset.i)});
+ if($('#fin'))$('#fin').onclick=finale;
+ let arm=false;$('#reset').onclick=e=>{if(!arm){arm=true;e.target.textContent='Иә, бүкіл прогресті өшіру';return}wipe();G=null;showStart()};
+}
+function floorIntro(i){
+ clearRun();setHud('menu');const F=FLOORS[i];
+ stage.innerHTML=`<section class="scr">
+  <div class="introtop"><span class="bignum">${i+1}</span><div><p class="eyebrow">${i+1}-қабат · ${F.t}</p><h2>${F.n}</h2></div></div>
+  <p class="story">${F.story}</p>
+  <div class="gamecard"><p class="eyebrow">Ойын</p><h3>${F.g}</h3><p>${F.rule}</p><p class="sub">Сізде 3 жүрек бар. Жүрек таусылса, қабатты қайта өтесіз.</p></div>
+  <button class="btn" id="play">Бастау</button>
+  <button class="btn ghost" id="back">Қабаттар тақтасына</button>
+ </section>`;
+ $('#play').onclick=()=>{sfx('tap');play(i)};$('#back').onclick=showMap;
+}
+function play(i){
+ clearRun();RUN={i,hearts:3,pts:0,dead:false};setHud('run');
+ stage.innerHTML='<div class="game" id="game"></div>';
+ [gCatch,gMatch,gSort,gDetect,gSignal,gBoss][i]($('#game'),ctx(i));
+}
+function floorWin(i){
+ clearRun();const st=Math.max(1,RUN.hearts);G.digits[i]=CODE[i];G.stars[i]=st;G.pts[i]=RUN.pts;G.next=Math.max(G.next,i+1);save();sfx('win');setHud('menu');
+ stage.innerHTML=`<section class="scr">
+  <p class="eyebrow">${i+1}-қабат · ${FLOORS[i].n}</p><h2>Бөлім құтқарылды</h2>
+  <div class="stars" aria-label="${st} жұлдыз">${'★'.repeat(st)}<span>${'★'.repeat(3-st)}</span></div>
+  <div class="digitcard"><span>Сейф кодының<br>${i+1}-саны</span><b>${CODE[i]}</b></div>
+  <p class="sub">Осы қабатта: +${RUN.pts} ұпай · қалған жүрек: ${RUN.hearts}</p>
+  <button class="btn" id="nx">${i<5?'Лифтке отыру':'Сейфті ашу'}</button>
+ </section>`;
+ $('#nx').onclick=()=>{sfx('tap');i<5?elevator(i):finale()};
+}
+function floorFail(i){
+ clearRun();G.score=Math.max(0,G.score-RUN.pts);save();setHud('menu');
+ stage.innerHTML=`<section class="scr">
+  <p class="eyebrow">${i+1}-қабат · ${FLOORS[i].n}</p><h2>Жүрек таусылды</h2>
+  <p class="lead">Бұл қабаттағы ұпай есептелмейді. Қателерді төменде қарап, қайта көріңдер.</p>
+  <div class="review"><ol>${G.log.filter(l=>l.f===i).slice(-3).map(l=>`<li><p>${esc(l.q)}</p><p class="ra">Дұрыс: ${esc(l.a)}</p></li>`).join('')}</ol></div>
+  <button class="btn" id="re">Қабатты қайта бастау</button>
+  <button class="btn ghost" id="mp">Қабаттар тақтасына</button>
+ </section>`;
+ $('#re').onclick=()=>play(i);$('#mp').onclick=showMap;
+}
+function elevator(i){
+ clearRun();setHud('menu');const L=LIFT[i];let n=0,err=0;
+ stage.innerHTML=`<section class="scr">
+  <div class="liftdoor"><div><p class="eyebrow">Лифт · бонус</p><p class="sub">${i+1}-қабаттан ${i+2}-қабатқа</p></div><span class="lnum">${i+2}</span></div>
+  <h3>${L.t}</h3><p class="sub">Лифт жүруі үшін ретімен бас: ${L.s}.</p>
+  <ol class="lorder" id="lo"></ol>
+  <div class="chips" id="lc">${shuffle(L.v).map(v=>`<button class="chip">${v}</button>`).join('')}</div>
+  <p class="note" id="lm" hidden></p>
+  <button class="link center" id="skip">Бонуссыз өту</button>
+ </section>`;
+ $('#lc').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;
+  if(b.textContent===L.v[n]){sfx('ok');$('#lo').insertAdjacentHTML('beforeend',`<li><b>${n+1}</b>${b.textContent}</li>`);b.remove();n++;
+   if(n===L.v.length){const bonus=Math.max(5,25-err*5);G.score+=bonus;save();hud();floatPts('+'+bonus,true);const m=$('#lm');m.hidden=false;m.textContent=`Есік ашылды. Лифт бонусы: +${bonus} ұпай.`;$('#skip').textContent='Қабаттар тақтасына';after(1500,showMap)}}
+  else{sfx('bad');err++;b.classList.remove('no');void b.offsetWidth;b.classList.add('no')}};
+ $('#skip').onclick=showMap;
+}
+function finale(){
+ clearRun();RUN=null;setHud('menu');G.tEnd=G.tEnd||Date.now();save();sfx('win');
+ const sec=Math.round((G.tEnd-G.t0)/1000),stars=G.stars.reduce((a,b)=>a+(b||0),0);
+ stage.innerHTML=`<section class="scr">
+  <canvas class="sky small" id="sky" aria-hidden="true"></canvas>
+  <p class="eyebrow">Миссия орындалды · ${esc(G.team)}</p>
+  <h2>Сейф ашылды</h2>
+  <div class="vault"><span>Сейф коды</span><div class="digits big">${CODE.map(d=>`<b class="on">${d}</b>`).join('')}</div></div>
+  <dl class="stats"><div><dt>Ұпай</dt><dd>${G.score}</dd></div><div><dt>Уақыт</dt><dd>${mmss(sec)}</dd></div><div><dt>Жұлдыз</dt><dd>${stars}/18</dd></div></dl>
+  <p class="story">Енді Алатау Фуд үшін өзгеріс жоспарын ұсыныңдар: қай қабаттағы мәселені бірінші шешесіңдер және неге?</p>
+  ${G.log.length?`<details class="review"><summary>Қателер талдауы (${G.log.length})</summary><ol>${G.log.map(l=>`<li><span class="rf">${l.f+1}-қабат · ${FLOORS[l.f].n}</span><p>${esc(l.q)}</p><p class="ra">Дұрыс: ${esc(l.a)}</p></li>`).join('')}</ol></details>`:'<p class="note">Бірде-бір қате жоқ. Тамаша нәтиже!</p>'}
+  <button class="btn" id="again">Жаңа команда бастау</button>
+ </section>`;
+ sky($('#sky'),6);
+ $('#again').onclick=()=>{wipe();G=null;showStart()};
+}
+
+/* ====== Ортақ: уақыты бар сұрақ ====== */
+function ask(el,o,handler){
+ el.innerHTML=`${o.head}${o.noBar?'':'<div class="bar"><i id="tb"></i></div>'}${o.body||''}<div class="opts ${o.cls||''}">${o.opts.map((x,k)=>`<button class="opt" data-k="${k}"><kbd>${k+1}</kbd><span>${x}</span></button>`).join('')}</div>${o.foot||''}`;
+ let t=o.T,done=false;const tb=el.querySelector('#tb');
+ const stop=loop(dt=>{t-=dt;if(tb){tb.style.width=Math.max(0,t/o.T*100)+'%';tb.classList.toggle('low',t<5)}if(t<=0)choose(-1)});
+ function choose(k){if(done)return;done=true;stop();onKey=null;const bs=[...el.querySelectorAll('.opt')];bs.forEach(b=>b.disabled=true);bs[o.ans].classList.add('ok');if(k>=0&&k!==o.ans)bs[k].classList.add('no');handler(k===o.ans,k,Math.max(0,t))}
+ el.querySelectorAll('.opt').forEach(b=>b.onclick=()=>choose(+b.dataset.k));
+ onKey=k=>{const n=parseInt(k,10);if(n>=1&&n<=o.opts.length)choose(n-1)};
+}
+
+/* ====== 1. Конвейер ====== */
+function gCatch(el,C){
+ el.innerHTML=`<div class="cv-wrap"><canvas id="cv" aria-label="Конвейер: дұрыс қораптарды науамен ұста"></canvas></div>
+ <div class="pad"><button class="padb" id="pl" aria-label="Солға">◀</button><button class="padb" id="pr" aria-label="Оңға">▶</button></div>
+ <p class="hint">Науаны саусақпен сүйре, ◀ ▶ батырмаларын ұстап тұр немесе ← → пернелерін бас.</p>`;
+ const cv=el.querySelector('#cv'),W=360,H=480,d=Math.min(2,devicePixelRatio||1);cv.width=W*d;cv.height=H*d;const x=cv.getContext('2d');x.scale(d,d);
+ const TY=H-48,GOAL=4,TW=96,FONT='600 12.5px "Golos Text", "Segoe UI", Arial, sans-serif';
+ let wv=0,got=0,items=[],spawn=0,lastLane=-1,tray=W/2,tx=null,banner=2.4,shake=0,fx=[],dead=false,t=0,P;
+ const bag=()=>({ok:shuffle(CATCH[wv].ok),bad:shuffle(CATCH[wv].bad),oi:0,bi:0});P=bag();
+ const hold=(id,k)=>{const b=el.querySelector(id);b.addEventListener('pointerdown',e=>{e.preventDefault();held[k]=1});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>held[k]=0))};hold('#pl','padl');hold('#pr','padr');
+ const toX=e=>{const r=cv.getBoundingClientRect();tx=(e.clientX-r.left)/r.width*W};
+ cv.addEventListener('pointerdown',e=>{try{cv.setPointerCapture(e.pointerId)}catch(_){}toX(e)});
+ cv.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='touch')toX(e)});
+ function wrap(s,maxW){x.font=FONT;const L=[];let cur='';for(const w of s.split(' ')){const tr=cur?cur+' '+w:w;if(x.measureText(tr).width>maxW&&cur){L.push(cur);cur=w}else cur=tr}L.push(cur);return L}
+ function spawnOne(){let lane;do lane=Math.random()*3|0;while(lane===lastLane);lastLane=lane;const ok=Math.random()<.55;const s=ok?P.ok[P.oi++%P.ok.length]:P.bad[P.bi++%P.bad.length];const lines=wrap(s,98);const h=lines.length*16+22;items.push({s,ok,lines,x:6+lane*118,y:-h,w:112,h})}
+ function rr(X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()}
+ function caught(it){
+  if(it.ok){got++;C.ok(10);fx.push({s:'+10',x:tray,y:TY-12,a:1,c:'#2fc193'});
+   if(got>=GOAL){wv++;got=0;items=[];if(wv>=CATCH.length){dead=true;wv=CATCH.length-1;got=GOAL;draw();after(600,()=>C.win());return}P=bag();banner=2.2;spawn=0}}
+  else{shake=1;fx.push({s:'✕',x:tray,y:TY-12,a:1,c:'#e5483b'});if(!C.bad(`«${it.s}» — «${CATCH[wv].t}» тобына жатпайды`,CATCH[wv].rule))dead=true}
+ }
+ function draw(){
+  const Wv=CATCH[wv];x.save();if(shake>0)x.translate(Math.sin(t*60)*5*shake,0);
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#17244a');g.addColorStop(1,'#0f1830');x.fillStyle=g;x.fillRect(-10,0,W+20,H);
+  x.strokeStyle='rgba(154,171,200,.12)';x.lineWidth=1;x.setLineDash([6,10]);x.lineDashOffset=-t*40;[121,239].forEach(lx=>{x.beginPath();x.moveTo(lx,58);x.lineTo(lx,TY-4);x.stroke()});x.setLineDash([]);
+  for(const it of items){rr(it.x,it.y,it.w,it.h,8);x.fillStyle='#f6efe2';x.fill();x.fillStyle=Wv.col;x.fillRect(it.x+10,it.y,it.w-20,4);
+   x.fillStyle='#1b2440';x.font=FONT;x.textAlign='center';x.textBaseline='alphabetic';it.lines.forEach((l,k)=>x.fillText(l,it.x+it.w/2,it.y+19+k*16))}
+  x.fillStyle='#1f2d52';x.fillRect(-10,TY+22,W+20,H-TY);x.fillStyle='#2e3f6c';for(let k=0;k<14;k++)x.fillRect(((k*30-t*50)%(W+30)+W+30)%(W+30)-15,TY+30,16,4);
+  rr(tray-TW/2,TY,TW,18,7);x.fillStyle='#f3b23a';x.fill();rr(tray-TW/2-6,TY+4,8,8,3);x.fill();rr(tray+TW/2-2,TY+4,8,8,3);x.fill();
+  x.fillStyle='#1b2440';x.font='800 8px "Unbounded", Arial, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('НАУА',tray,TY+9.5);
+  x.fillStyle='rgba(23,34,63,.95)';x.fillRect(-10,0,W+20,54);x.fillStyle=Wv.col;x.fillRect(-10,52,W+20,2);
+  x.textBaseline='alphabetic';x.textAlign='left';x.font='700 10px "Golos Text", Arial, sans-serif';x.fillStyle='#9aabc8';x.fillText(`${wv+1}/${CATCH.length} ТОЛҚЫН · ҰСТА:`,12,20);
+  x.font='700 15px "Golos Text", Arial, sans-serif';x.fillStyle='#eef2f8';x.fillText(Wv.t,12,41);
+  for(let k=0;k<GOAL;k++){x.beginPath();x.arc(W-16*(GOAL-k),18,5,0,7);x.fillStyle=k<got?Wv.col:'#2e3f6c';x.fill()}
+  if(banner>0&&!dead){const a=Math.min(1,banner*2);x.globalAlpha=a;x.fillStyle='rgba(15,24,48,.88)';x.fillRect(-10,150,W+20,130);x.fillStyle=Wv.col;x.fillRect(-10,150,W+20,3);
+   x.textAlign='center';x.font='800 13px "Unbounded", Arial, sans-serif';x.fillStyle=Wv.col;x.fillText(`${wv+1}-ТОЛҚЫН`,W/2,190);
+   x.font='700 17px "Golos Text", Arial, sans-serif';x.fillStyle='#eef2f8';wrap(Wv.t,320).forEach((l,k)=>x.fillText(l,W/2,220+k*20));
+   x.font='500 12.5px "Golos Text", Arial, sans-serif';x.fillStyle='#9aabc8';x.fillText('Тек осы топқа жататын қораптарды ұста',W/2,262);x.globalAlpha=1}
+  for(const f of fx){x.globalAlpha=Math.max(0,f.a);x.fillStyle=f.c;x.font='800 16px "Unbounded", Arial, sans-serif';x.textAlign='center';x.fillText(f.s,f.x,f.y)}x.globalAlpha=1;
+  x.restore();
+ }
+ loop(dt=>{if(dead)return;t+=dt;
+  const sp=330*dt,dir=(held.arrowleft||held.a||held.padl?-1:0)+(held.arrowright||held.d||held.padr?1:0);
+  if(dir){tray+=dir*sp;tx=null}else if(tx!=null)tray+=Math.max(-sp,Math.min(sp,tx-tray));
+  tray=Math.max(TW/2+4,Math.min(W-TW/2-4,tray));
+  if(banner>0)banner-=dt;else{spawn-=dt;if(spawn<=0){spawnOne();spawn=1.6-wv*.18}}
+  const v=56+wv*14+got*3;
+  for(const it of items){it.y+=v*dt;if(!it.gone&&it.y+it.h>=TY&&it.y+it.h<=TY+24){const ov=Math.min(it.x+it.w,tray+TW/2)-Math.max(it.x,tray-TW/2);if(ov>=30){it.gone=true;caught(it);if(dead||banner>0)break}}}
+  items=items.filter(it=>!it.gone&&it.y<H);
+  fx.forEach(f=>{f.y-=40*dt;f.a-=dt*1.3});fx=fx.filter(f=>f.a>0);if(shake>0)shake=Math.max(0,shake-dt*2.2);
+  draw();
+ });
+ cleanups.push(()=>{held.padl=held.padr=0});
+ (document.fonts?document.fonts.load(FONT):Promise.resolve()).then(draw,draw);
+}
+
+/* ====== 2. Модель жұптары ====== */
+function gMatch(el,C){
+ const rounds=[MATTR[0],...pick(MATTR.slice(1),3)];let r=0,stopT=null;
+ function round(){
+  if(stopT)stopT();const R=rounds[r],right=shuffle(R.v.map((v,k)=>({v,k})));
+  el.innerHTML=`<div class="ghead"><p class="eyebrow">${r+1}/${rounds.length} раунд · Модель жұптары</p><h3>${R.t}</h3><p class="sub">Модельді басып, сосын оның сипатын бас.</p></div>
+  <div class="bar"><i id="tb"></i></div>
+  <div class="match" id="mt"><svg id="ml" aria-hidden="true"></svg>
+   <div class="col models">${MODELS.map((m,k)=>`<button class="mb" data-s="l" data-k="${k}">${m}</button>`).join('')}</div>
+   <div class="col">${right.map(o=>`<button class="mb" data-s="r" data-k="${o.k}">${o.v}</button>`).join('')}</div></div>`;
+  let sel=null,done=0,busy=false;const T=45;let t=T;const mt=el.querySelector('#mt'),svg=el.querySelector('#ml'),tb=el.querySelector('#tb');
+  const line=(a,b)=>{const o=mt.getBoundingClientRect(),A=a.getBoundingClientRect(),B=b.getBoundingClientRect();svg.insertAdjacentHTML('beforeend',`<line x1="${A.right-o.left}" y1="${A.top+A.height/2-o.top}" x2="${B.left-o.left}" y2="${B.top+B.height/2-o.top}"/>`)};
+  mt.addEventListener('click',e=>{const b=e.target.closest('.mb');if(!b||b.classList.contains('done')||busy)return;sfx('tap');
+   if(!sel||sel.dataset.s===b.dataset.s){if(sel)sel.classList.remove('sel');if(sel===b){sel=null;return}sel=b;b.classList.add('sel');return}
+   const L=sel.dataset.s==='l'?sel:b,Rb=sel.dataset.s==='l'?b:sel;sel.classList.remove('sel');sel=null;
+   if(L.dataset.k===Rb.dataset.k){L.classList.add('done');Rb.classList.add('done');line(L,Rb);C.ok(15);done++;
+    if(done===4){stopT();const bonus=Math.ceil(t/3);after(400,()=>{if(bonus>0)C.ok(bonus);r++;after(700,()=>r<rounds.length?round():C.win())})}}
+   else{busy=true;L.classList.add('no');Rb.classList.add('no');const m=MODELS[+L.dataset.k];
+    C.bad(`${m} моделі, «${R.t}»: «${Rb.textContent}» таңдалды`,`${m} → ${R.v[+L.dataset.k]}`);
+    after(600,()=>{L.classList.remove('no');Rb.classList.remove('no');busy=false})}
+  });
+  stopT=loop(dt=>{t-=dt;tb.style.width=Math.max(0,t/T*100)+'%';tb.classList.toggle('low',t<10);if(t<=0){t=T;C.bad(`Уақыт бітті: «${R.t}» раунды`,R.v.map((v,k)=>MODELS[k]+' → '+v).join('; '))}});
+ }
+ round();
+}
+
+/* ====== 3. Кім бұл? ====== */
+function gSort(el,C){
+ let r=0,i=0,combo=0,deck=[];
+ const N=4;
+ function startRound(){deck=pick(SORT[r].c,N);i=0;card()}
+ function card(){
+  const R=SORT[r],[nm,role,tx,a]=deck[i];
+  ask(el,{T:14,ans:a,cls:'g2',opts:R.o,
+   head:`<div class="ghead"><p class="eyebrow">${r+1}/${SORT.length} раунд · ${i+1}/${N} қызметкер</p><h3>${R.t}</h3></div>`,
+   body:`<article class="person"><div class="ava" style="--h:${hue(nm)}">${nm[0]}</div><div class="pmeta"><b>${nm}</b><span>${role}</span></div><p class="quote">${tx}</p><div class="stamp" id="st"></div></article><p class="ask">${R.q}</p>`,
+   foot:`<p class="combo">${combo>=2?'Комбо ×'+combo:''}</p>`},
+  (right,k)=>{const st=el.querySelector('#st');
+   if(right){combo++;C.ok(10+Math.min(combo-1,5)*2);st.textContent='Дұрыс';st.className='stamp ok'}
+   else{combo=0;st.textContent=k<0?'Уақыт бітті':'Қате';st.className='stamp no';if(!C.bad(`${nm} (${role}): ${tx}`,`${R.t}: ${R.o[a]}`))return}
+   after(1300,()=>{i++;if(i<N)card();else{r++;r<SORT.length?startRound():C.win()}})});
+ }
+ startRound();
+}
+
+/* ====== 4. Детектив ====== */
+function gDetect(el,C){
+ const cases=shuffle([...pick(KELLY.filter(k=>k.a===0),2),...pick(KELLY.filter(k=>k.a===1),2)]),effs=pick(EFFS,5);
+ let i=0,hint=false;
+ const ANS=['Ішкі себеп · диспозициялық','Сыртқы жағдай · ситуациялық'];
+ function kelly(){
+  const K=cases[i];
+  ask(el,{T:22,ans:K.a,cls:'',opts:ANS,
+   head:`<div class="ghead"><p class="eyebrow">1-кезең · Келли тексеруі · ${i+1}/${cases.length} іс</p><h3>Себеп адамның өзінде ме, жағдайда ма?</h3></div>`,
+   body:`<article class="file"><p class="file-tag">Іс № ${i*7+14} · Алатау Фуд</p><p class="case">${K.s}</p><ul class="ev">${K.e.map(([n,v,d])=>`<li><span class="evn">${n}</span><span class="evv ${v==='жоғары'?'hi':'lo'}">${v}</span><span class="evd">${d}</span></li>`).join('')}</ul></article>`,
+   foot:hint?`<p class="note">${KELLY_RULE}</p>`:`<button class="link" id="hn">Келли ережесін көру (−5 ұпай)</button>`},
+  right=>{if(right)C.ok(15);else if(!C.bad(`${K.s} (${K.e.map(e=>e[0].toLowerCase()+' '+e[1]).join(', ')})`,ANS[K.a]))return;
+   after(1300,()=>{i++;if(i<cases.length)kelly();else{i=0;eff()}})});
+  const hn=el.querySelector('#hn');if(hn)hn.onclick=()=>{hint=true;C.pen(5);hn.outerHTML=`<p class="note">${KELLY_RULE}</p>`};
+ }
+ function eff(){
+  const [s,a]=effs[i],opts=shuffle([EFF[a],...pick(EFF.filter((_,k)=>k!==a),3)]);
+  ask(el,{T:18,ans:opts.indexOf(EFF[a]),opts,
+   head:`<div class="ghead"><p class="eyebrow">2-кезең · Қабылдау қателері · ${i+1}/${effs.length}</p><h3>Менеджер қандай қате жіберді?</h3></div>`,
+   body:`<article class="file"><p class="file-tag">Шағым · HR бөліміне</p><p class="case">${s}</p></article>`},
+  (right,k,t)=>{if(right)C.ok(10+Math.round(t/3));else if(!C.bad(s,EFF[a]))return;
+   after(1300,()=>{i++;i<effs.length?eff():C.win()})});
+ }
+ kelly();
+}
+
+/* ====== 5. Сигнал ====== */
+function gSignal(el,C){
+ const list=pick(BARR,6);let i=0;
+ function chain(){
+  let n=0,err=0;
+  el.innerHTML=`<div class="ghead"><p class="eyebrow">1-кезең · Коммуникация үрдісі</p><h3>Хабардың жолын құрастыр</h3><p class="sub">Кезеңдерді ретімен бас: жіберушіден кері байланысқа дейін. Қате басу — минус 3 ұпай.</p></div>
+  <ol class="chain" id="ch">${CHAIN.map((_,k)=>`<li class="slot">${k+1}</li>`).join('')}</ol>
+  <div class="chips" id="cp">${shuffle(CHAIN).map(c=>`<button class="chip">${c}</button>`).join('')}</div>`;
+  el.querySelector('#cp').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;
+   if(b.textContent===CHAIN[n]){sfx('tap');const s=el.querySelectorAll('.slot')[n];s.textContent=`${n+1}. ${b.textContent}`;s.classList.add('f');b.remove();n++;
+    if(n===CHAIN.length){C.ok(Math.max(10,35-err*5));after(1000,packet)}}
+   else{err++;C.pen(3);sfx('bad');b.classList.remove('no');void b.offsetWidth;b.classList.add('no')}};
+ }
+ function packet(){
+  const [s,a]=list[i],opts=shuffle([BT[a],...pick(BT.filter((_,k)=>k!==a),3)]),T=Math.max(7,12-i*.8);
+  ask(el,{T,ans:opts.indexOf(BT[a]),opts,noBar:true,
+   head:`<div class="ghead"><p class="eyebrow">2-кезең · Кедергілер · ${i+1}/${list.length}</p><h3>Хабар жетпей тұр</h3></div>`,
+   body:`<div class="track"><span class="node">Жіберуші</span><div class="wire"><i class="pkt" id="pk" style="animation-duration:${T}s"></i><b class="wall" id="wl"></b></div><span class="node">Қабылдаушы</span></div><p class="case">${s}</p><p class="ask">Бұл қандай кедергі?</p>`},
+  (right,k,t)=>{const pk=el.querySelector('#pk'),wl=el.querySelector('#wl');const left=getComputedStyle(pk).left;pk.style.animation='none';pk.style.left=left;void pk.offsetWidth;pk.style.transition='left .7s ease';
+   if(right){wl.classList.add('broken');pk.style.left='100%';C.ok(10+Math.round(t))}
+   else{pk.style.left='0%';if(!C.bad(s,BT[a]))return}
+   after(1400,()=>{i++;i<list.length?packet():C.win()})});
+ }
+ chain();
+}
+
+/* ====== 6. Босс ====== */
+function gBoss(el,C){
+ const P=[{n:'Ұйымдық мәдениет',q:shuffle(B_CULT)},{n:'Әртүрлілік, теңдік, инклюзия',q:shuffle(B_DEI)},{n:'Мотивация',q:shuffle(B_MOT)}],idx=[0,0,0];
+ let hp=100,combo=0;const phase=()=>hp>66?0:hp>33?1:2;
+ el.innerHTML=`<div class="boss"><div class="bossart" id="ba">${BOSS_SVG}</div><div><p class="eyebrow" id="ph"></p><h3>Дағдарыс</h3><div class="hp"><i id="hp"></i></div><p class="hpn" id="hpn">100/100</p></div></div>
+  <div class="bar"><i id="tb"></i></div>
+  <article class="stmt" id="sm"></article>
+  <div class="tf"><button class="opt big" id="bf"><kbd>←</kbd>Жалған</button><button class="opt big" id="bt"><kbd>→</kbd>Дұрыс</button></div>
+  <p class="combo" id="cb"></p><p class="fix" id="fx"></p>`;
+ const ba=el.querySelector('#ba'),bf=el.querySelector('#bf'),bt=el.querySelector('#bt'),tb=el.querySelector('#tb');
+ const anim=c=>{ba.classList.remove('hit','atk');void ba.offsetWidth;ba.classList.add(c)};
+ function nextQ(){
+  const p=phase(),Q=P[p].q[idx[p]++%P[p].q.length];
+  el.querySelector('#ph').textContent=`${p+1}-фаза · ${P[p].n}`;el.querySelector('#sm').textContent=Q[0];el.querySelector('#fx').textContent='';
+  [bf,bt].forEach(b=>{b.disabled=false;b.classList.remove('ok','no')});
+  const T=10;let t=T,done=false;
+  const stop=loop(dt=>{t-=dt;tb.style.width=Math.max(0,t/T*100)+'%';tb.classList.toggle('low',t<4);if(t<=0)answer(-1)});
+  function answer(v){if(done)return;done=true;stop();onKey=null;[bf,bt].forEach(b=>b.disabled=true);(Q[1]?bt:bf).classList.add('ok');
+   const right=v===Q[1];
+   if(right){combo++;const dmg=8+Math.min(combo-1,3)*3;hp=Math.max(0,hp-dmg);C.ok(10+Math.min(combo,5)*2);sfx('hit');anim('hit');
+    el.querySelector('#hp').style.width=hp+'%';el.querySelector('#hpn').textContent=`${hp}/100 · соққы −${dmg}`}
+   else{combo=0;if(v>=0)(v?bt:bf).classList.add('no');anim('atk');el.querySelector('#fx').textContent=(v<0?'Уақыт бітті. ':'')+(Q[1]?'Бұл тұжырым — дұрыс.':Q[2]);
+    if(!C.bad(Q[0],Q[1]?'Тұжырым дұрыс':'Тұжырым жалған. '+Q[2]))return}
+   el.querySelector('#cb').textContent=combo>=2?`Комбо ×${combo} · соққы күшейді`:'';
+   if(hp<=0){el.querySelector('#ph').textContent='Дағдарыс жеңілді';after(1100,()=>C.win());return}
+   after(right?900:2600,nextQ)}
+  bf.onclick=()=>answer(0);bt.onclick=()=>answer(1);
+  onKey=k=>{if(k==='arrowleft')answer(0);else if(k==='arrowright')answer(1)};
+ }
+ nextQ();
+}
+
+/* ====== Іске қосу ====== */
+try{window.claude?.hot?.snapshot?.(()=>({G}))}catch(e){}
+function boot(d){const g=d&&d.G;if(g&&g.t0){G=g;G.next>=6?finale():showMap()}else showStart()}
+try{window.claude?.hot?.ready?window.claude.hot.ready(boot):boot(window.claude?.hot?.data??{})}catch(e){boot({})}
+</script>
